@@ -17,18 +17,18 @@ module.exports.onStart = async function ({ api, event, args }) {
   const { threadID, messageID } = event;
 
   try {
-    // === Dhaka Time (GMT+6) ===
+    // === India Time (GMT+5:30) ===
     const now = new Date();
-    const dhakaOffset = 6 * 60 * 60 * 1000;
-    const dhakaTime = new Date(now.getTime() + dhakaOffset);
+    const indiaOffset = 5.5 * 60 * 60 * 1000; // 5.5 ঘণ্টা
+    const indiaTime = new Date(now.getTime() + indiaOffset);
 
-    const year = dhakaTime.getFullYear();
-    const month = dhakaTime.getMonth();
-    const date = dhakaTime.getDate();
-    const day = dhakaTime.getDay();
-    let hours = dhakaTime.getHours();
-    const minutes = dhakaTime.getMinutes();
-    const seconds = dhakaTime.getSeconds();
+    const year = indiaTime.getFullYear();
+    const month = indiaTime.getMonth();
+    const date = indiaTime.getDate();
+    const day = indiaTime.getDay();
+    let hours = indiaTime.getHours();
+    const minutes = indiaTime.getMinutes();
+    const seconds = indiaTime.getSeconds();
 
     const ampm = hours >= 12 ? 'PM' : 'AM';
     hours = hours % 12;
@@ -47,7 +47,7 @@ module.exports.onStart = async function ({ api, event, args }) {
     });
 
     await api.sendMessage({
-      body: `${dayName}, ${date} ${monthName} ${year}\n${timeStr}\nBDT (GMT+6)`,
+      body: `${dayName}, ${date} ${monthName} ${year}\n${timeStr}\nIST (GMT+5:30)`,
       attachment: fs.createReadStream(filePath)
     }, threadID, messageID);
 
@@ -161,33 +161,29 @@ async function generateUpCard(data) {
     if (dayCount > daysInMonth) break;
   }
 
-  // Footer (Adjusted)
+  // Footer (Optional)
   ctx.font = 'italic 35px "Segoe UI"';
-  ctx.fillStyle = '#00ffcc';
-  ctx.shadowColor = '#00ffcc';
-  ctx.shadowBlur = 30;
-  ctx.fillText('12-Hour • Goat Bot', width / 2, height - 70);
-  ctx.shadowColor = 'transparent';
+  // Footer content can be added here
 
-  // Save
-  const cacheDir = path.join(__dirname, 'cache');
-  if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
-  const filePath = path.join(cacheDir, `time_up_${Date.now()}.png`);
-  fs.writeFileSync(filePath, canvas.toBuffer());
+  const filePath = path.join(__dirname, `time_card_${Date.now()}.png`);
+  const buffer = canvas.toBuffer('image/png');
+  fs.writeFileSync(filePath, buffer);
   return filePath;
 }
 
-function roundRect(ctx, x, y, w, h, r, fill = false, stroke = false) {
+// === Helper: Rounded Rectangle ===
+function roundRect(ctx, x, y, width, height, radius, fill = false, stroke = false) {
+  if (typeof radius === 'number') radius = { tl: radius, tr: radius, br: radius, bl: radius };
   ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.moveTo(x + radius.tl, y);
+  ctx.lineTo(x + width - radius.tr, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius.tr);
+  ctx.lineTo(x + width, y + height - radius.br);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius.br, y + height);
+  ctx.lineTo(x + radius.bl, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius.bl);
+  ctx.lineTo(x, y + radius.tl);
+  ctx.quadraticCurveTo(x, y, x + radius.tl, y);
   ctx.closePath();
   if (fill) ctx.fill();
   if (stroke) ctx.stroke();
